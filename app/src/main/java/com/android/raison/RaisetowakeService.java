@@ -39,7 +39,7 @@ public class RaisetowakeService extends Service implements SensorEventListener {
         mSensorManager.getRotationMatrix(mRotationMatrix, null, mAccelerometerReading, mMagnetometerReading);
         // Express the updated rotation matrix as three orientation angles.
         mSensorManager.getOrientation(mRotationMatrix, mOrientationAngles);
-        //Log.i(TAG, "z: " + mOrientationAngles[0] + " x: " + mOrientationAngles[1] + " y: " + mOrientationAngles[2]);
+        Log.i(TAG, "z: " + mOrientationAngles[0] + " x: " + mOrientationAngles[1] + " y: " + mOrientationAngles[2]);
         return mOrientationAngles[1]; //Pitch angle in radians
     }
 
@@ -50,39 +50,56 @@ public class RaisetowakeService extends Service implements SensorEventListener {
     @Override
     public int onStartCommand (Intent intent, int flags, int startId) {
         Log.i(TAG, "Raisetowake service started!");
+        /** Code needed to make the service as a foreground service
+        Intent main_intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, main_intent, 0);
 
+        Notification notification =
+                new Notification.Builder(this)
+                        .setContentTitle("Raison")
+                        //.setContentText(getText(R.string.notification_message))
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentIntent(pendingIntent)
+                        .setTicker("Raison")
+                        .setOngoing(true)
+                        .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+                        .build();
+
+        startForeground(123, notification);
+*/
         final PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         final SensorManager mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI, new Handler());
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_UI, new Handler());
-        Runnable r = new Runnable() {
-            boolean phone_was_horizontal = false;
-            public void run() {
-                while(true) {
-                    if (!pm.isInteractive()) { //check if the screen is turned off
-                        //check position
-                        float angle = getInclinationAngle(mSensorManager);
+        final Handler handler = new Handler();
+        final int delay = 3000; //milliseconds
 
-                        if (phone_was_horizontal && isPhoneFaceUp() && ((angle >= -1) && (angle < -0.5))) {
-                            //wake up
-                            PowerManager.WakeLock screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TAG");
-                            screenLock.acquire(1); //automatically release it
-                            phone_was_horizontal = false;
-                        } else if (Math.abs(angle) < 0.5){
-                            phone_was_horizontal = true;
-                        }
-                    }
-                    //Sleep to avoid too much CPU consumption
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        Log.e(TAG, "Error on sleep: " + e.getMessage());
+        handler.postDelayed(new Runnable(){
+            boolean phone_was_horizontal = false;
+            public void run(){
+                if (!pm.isInteractive()) { //check if the screen is turned off
+                    //check position
+                    float angle = getInclinationAngle(mSensorManager);
+
+                    if (phone_was_horizontal && isPhoneFaceUp() && ((angle >= -1) && (angle < -0.5))) {
+                        //wake up
+                        PowerManager.WakeLock screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TAG");
+                        screenLock.acquire(1); //automatically release it
+                        phone_was_horizontal = false;
+                    } else if (Math.abs(angle) < 0.5){
+                        phone_was_horizontal = true;
                     }
                 }
+                //Sleep to avoid too much CPU consumption
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Error on sleep: " + e.getMessage());
+                }
+                handler.postDelayed(this, delay);
             }
-        };
-        Thread t = new Thread(r);
-        t.start();
+        }, delay);
+
         return Service.START_STICKY;
     }
 

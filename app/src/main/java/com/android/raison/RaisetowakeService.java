@@ -1,5 +1,7 @@
 package com.android.raison;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +13,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.util.Pair;
 
@@ -47,6 +50,7 @@ public class RaisetowakeService extends Service implements SensorEventListener {
     @Override
     public int onStartCommand (Intent intent, int flags, int startId) {
         Log.i(TAG, "Raisetowake service started!");
+
         final PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         final SensorManager mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI, new Handler());
@@ -64,7 +68,7 @@ public class RaisetowakeService extends Service implements SensorEventListener {
                             PowerManager.WakeLock screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TAG");
                             screenLock.acquire(1); //automatically release it
                             phone_was_horizontal = false;
-                        } else if (angle < 0.5){
+                        } else if (Math.abs(angle) < 0.5){
                             phone_was_horizontal = true;
                         }
                     }

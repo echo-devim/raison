@@ -90,12 +90,6 @@ public class RaisetowakeService extends Service implements SensorEventListener {
                         phone_was_horizontal = true;
                     }
                 }
-                //Sleep to avoid too much CPU consumption
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Error on sleep: " + e.getMessage());
-                }
                 handler.postDelayed(this, delay);
             }
         }, delay);

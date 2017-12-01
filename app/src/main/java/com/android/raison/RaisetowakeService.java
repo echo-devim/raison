@@ -39,7 +39,7 @@ public class RaisetowakeService extends Service implements SensorEventListener {
         mSensorManager.getRotationMatrix(mRotationMatrix, null, mAccelerometerReading, mMagnetometerReading);
         // Express the updated rotation matrix as three orientation angles.
         mSensorManager.getOrientation(mRotationMatrix, mOrientationAngles);
-        Log.i(TAG, "z: " + mOrientationAngles[0] + " x: " + mOrientationAngles[1] + " y: " + mOrientationAngles[2]);
+        //Log.i(TAG, "z: " + mOrientationAngles[0] + " x: " + mOrientationAngles[1] + " y: " + mOrientationAngles[2]);
         return mOrientationAngles[1]; //Pitch angle in radians
     }
 
@@ -74,6 +74,9 @@ public class RaisetowakeService extends Service implements SensorEventListener {
         final Handler handler = new Handler();
         final int delay = 3000; //milliseconds
 
+        //Force the cpu to stay awake
+        PowerManager.WakeLock cpuLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Raiso");
+        cpuLock.acquire();
         handler.postDelayed(new Runnable(){
             boolean phone_was_horizontal = false;
             public void run(){
@@ -83,7 +86,7 @@ public class RaisetowakeService extends Service implements SensorEventListener {
 
                     if (phone_was_horizontal && isPhoneFaceUp() && ((angle >= -1) && (angle < -0.5))) {
                         //wake up
-                        PowerManager.WakeLock screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TAG");
+                        PowerManager.WakeLock screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "Raiso");
                         screenLock.acquire(1); //automatically release it
                         phone_was_horizontal = false;
                     } else if (Math.abs(angle) < 0.5){

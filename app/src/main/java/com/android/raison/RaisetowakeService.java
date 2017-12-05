@@ -28,6 +28,10 @@ public class RaisetowakeService extends Service implements SensorEventListener {
     private final float[] mRotationMatrix = new float[9];
     private final float[] mOrientationAngles = new float[3];
 
+    private PowerManager pm;
+    private SensorManager mSensorManager;
+    private boolean phone_was_horizontal = false;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -67,35 +71,10 @@ public class RaisetowakeService extends Service implements SensorEventListener {
 
         startForeground(123, notification);
 */
-        final PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-        final SensorManager mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        pm = (PowerManager) getSystemService(POWER_SERVICE);
+        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI, new Handler());
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_UI, new Handler());
-        final Handler handler = new Handler();
-        final int delay = 3000; //milliseconds
-
-        //Force the cpu to stay awake
-        PowerManager.WakeLock cpuLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Raiso");
-        cpuLock.acquire();
-        handler.postDelayed(new Runnable(){
-            boolean phone_was_horizontal = false;
-            public void run(){
-                if (!pm.isInteractive()) { //check if the screen is turned off
-                    //check position
-                    float angle = getInclinationAngle(mSensorManager);
-
-                    if (phone_was_horizontal && isPhoneFaceUp() && ((angle >= -1) && (angle < -0.5))) {
-                        //wake up
-                        PowerManager.WakeLock screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "Raiso");
-                        screenLock.acquire(1); //automatically release it
-                        phone_was_horizontal = false;
-                    } else if (Math.abs(angle) < 0.5){
-                        phone_was_horizontal = true;
-                    }
-                }
-                handler.postDelayed(this, delay);
-            }
-        }, delay);
 
         return Service.START_STICKY;
     }
@@ -109,6 +88,20 @@ public class RaisetowakeService extends Service implements SensorEventListener {
         else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
             System.arraycopy(event.values, 0, mMagnetometerReading,
                     0, mMagnetometerReading.length);
+        }
+
+        if (!pm.isInteractive()) { //check if the screen is turned off
+            //check position
+            float angle = getInclinationAngle(mSensorManager);
+
+            if (phone_was_horizontal && isPhoneFaceUp() && ((angle >= -1) && (angle < -0.5))) {
+                //wake up
+                PowerManager.WakeLock screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "Raiso");
+                screenLock.acquire(1); //automatically release it
+                phone_was_horizontal = false;
+            } else if (Math.abs(angle) < 0.5){
+                phone_was_horizontal = true;
+            }
         }
 
     }

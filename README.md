@@ -5,5 +5,7 @@ This means that if Raison notices that you raised your phone from the table, Rai
 
 The application should work for Android 5 (Lollipop) or higher.
 
+**ATTENTION:** Due to different driver implementations (depend on the vendor), often the accelerometer (needed by this app) is disabled in sleep mode. Read ![here](https://stackoverflow.com/questions/9982433/android-accelerometer-not-working-when-screen-is-turned-off) for more details.
+
 #### License
 GPLv3
